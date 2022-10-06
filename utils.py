@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def group_df(dataframe: pd.DataFrame, column_to_group_by: str) -> pd.DataFrame:
     """_summary_
 
@@ -15,11 +16,12 @@ def group_df(dataframe: pd.DataFrame, column_to_group_by: str) -> pd.DataFrame:
     new_df = new_df.groupby([column_to_group_by]).sum()
     return new_df
 
+
 def drop_oldest_duplicates(
-    dataframe: pd.DataFrame, 
-    grunnkrets_column_name: str = "grunnkrets_id", 
+    dataframe: pd.DataFrame,
+    grunnkrets_column_name: str = "grunnkrets_id",
     year_column_name: str = "year"
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
     """Only retains the newest information available for each grunnkrets id, and removes old information.
 
     Args:
@@ -37,6 +39,37 @@ def drop_oldest_duplicates(
     new_df = new_df.drop_duplicates(grunnkrets_column_name, keep="last")
     return new_df
 
+
+def group_age_columns(age_distribution_df: pd.DataFrame, span_size: int = 5):
+    """Collapse n age-columns into one, summing their contents (where n = span_size).
+
+    Args:
+        age_distribution_df (pd.DataFrame): The dataframe whose columns we want to collapse
+        span_size (int, optional): Number of columns to collapse for each new column created.
+                                   Defaults to 5.
+
+    Returns:
+        _type_: The new dataframe where age-columns are grouped.
+    """
+    age_list = []
+    new_df = pd.DataFrame()
+    for col in list(age_distribution_df.columns):
+        if col.startswith("age"):
+            _, age_num = col.split("_")
+            age_list.append([int(age_num), col])
+        else:
+            new_df[col] = age_distribution_df[col]
+    age_list = sorted(age_list, key=lambda x: (x[0]))
+    max_val = age_list[-1][0]
+    for i in range(0, max_val+1, span_size):
+        new_df["age_" + str(i) + "-" + str(min(i + span_size - 1, max_val))] = age_distribution_df[
+            [
+                row[1]for row in age_list[i:min(i+span_size, max_val)]
+            ]
+        ].sum(axis=1)
+    return new_df
+
+
 def create_fylke_column(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 1 new columns for "fylke" information.
 
@@ -48,8 +81,10 @@ def create_fylke_column(dataframe: pd.DataFrame, grunnkrets_column_name: str = "
     Returns:
         pd.DataFrame: _description_
     """
-    dataframe["fylke"] = dataframe[grunnkrets_column_name].apply(lambda x: int(str(x)[:len(str(x)) - 6]))
+    dataframe["fylke"] = dataframe[grunnkrets_column_name].apply(
+        lambda x: int(str(x)[:len(str(x)) - 6]))
     return dataframe
+
 
 def create_kommune_column(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 1 new columns for "kommune" information.
@@ -62,8 +97,10 @@ def create_kommune_column(dataframe: pd.DataFrame, grunnkrets_column_name: str =
     Returns:
         pd.DataFrame: _description_
     """
-    dataframe["kommune"] = dataframe[grunnkrets_column_name].apply(lambda x: int(str(x)[:len(str(x)) - 4]))
+    dataframe["kommune"] = dataframe[grunnkrets_column_name].apply(
+        lambda x: int(str(x)[:len(str(x)) - 4]))
     return dataframe
+
 
 def create_delomrade_column(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 1 new columns for "delomrade" information.
@@ -76,8 +113,10 @@ def create_delomrade_column(dataframe: pd.DataFrame, grunnkrets_column_name: str
     Returns:
         pd.DataFrame: _description_
     """
-    dataframe["delomrade"] = dataframe[grunnkrets_column_name].apply(lambda x: int(str(x)[:len(str(x)) - 2]))
+    dataframe["delomrade"] = dataframe[grunnkrets_column_name].apply(
+        lambda x: int(str(x)[:len(str(x)) - 2]))
     return dataframe
+
 
 def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 3 new columns. A column for "fylke",
@@ -91,16 +130,20 @@ def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name:
     Returns:
         pd.DataFrame: The modified dataframe.
     """
-    dataframe = create_fylke_column(dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
-    dataframe = create_kommune_column(dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
-    dataframe = create_delomrade_column(dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
+    dataframe = create_fylke_column(
+        dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
+    dataframe = create_kommune_column(
+        dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
+    dataframe = create_delomrade_column(
+        dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
     return dataframe
 
+
 def preprocess_grunnkrets_df(
-    dataframe: pd.DataFrame, 
-    grunnkrets_column_name: str = "grunnkrets_id", 
+    dataframe: pd.DataFrame,
+    grunnkrets_column_name: str = "grunnkrets_id",
     year_column_name: str = "year"
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
     """This takes in a pandas dataframe containing data related to grunnkrets_ids
     and preprocesses it. Only keeps newest information available for each grunnkrets
     and decodes the grunnkrets_id into "fylke", "kommune" and "delomrade".
@@ -116,9 +159,10 @@ def preprocess_grunnkrets_df(
         pd.DataFrame: The modified dataframe
     """
     dataframe = drop_oldest_duplicates(
-        dataframe=dataframe, 
-        grunnkrets_column_name=grunnkrets_column_name, 
+        dataframe=dataframe,
+        grunnkrets_column_name=grunnkrets_column_name,
         year_column_name=year_column_name
-        )
-    dataframe = create_geographical_columns(dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
+    )
+    dataframe = create_geographical_columns(
+        dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
     return dataframe
