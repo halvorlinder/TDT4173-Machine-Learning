@@ -1,6 +1,7 @@
 data/
 sample_submission.csv
 introduction.ipynb
+submission.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
