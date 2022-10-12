@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 def group_df(dataframe: pd.DataFrame, column_to_group_by: str) -> pd.DataFrame:
@@ -118,6 +119,9 @@ def create_delomrade_column(dataframe: pd.DataFrame, grunnkrets_column_name: str
     return dataframe
 
 
+stores_train = pd.read_csv("data/stores_train.csv")
+
+
 def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 3 new columns. A column for "fylke",
     a column for "kommune" and a column for "delomrade".
@@ -130,7 +134,7 @@ def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name:
     Returns:
         pd.DataFrame: The modified dataframe.
     """
-    dataframe = dataframe.copy()
+#    dataframe = dataframe.copy()
     dataframe = create_fylke_column(
         dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
     dataframe = create_kommune_column(
@@ -159,7 +163,7 @@ def preprocess_grunnkrets_df(
     Returns:
         pd.DataFrame: The modified dataframe
     """
-    dataframe = drop_oldest_duplicates( 
+    dataframe = drop_oldest_duplicates(
         dataframe=dataframe,
         grunnkrets_column_name=grunnkrets_column_name,
         year_column_name=year_column_name
@@ -167,6 +171,7 @@ def preprocess_grunnkrets_df(
     dataframe = create_geographical_columns(
         dataframe=dataframe, grunnkrets_column_name=grunnkrets_column_name)
     return dataframe
+
 
 def join_grouped_df(
     main_df: pd.DataFrame,
@@ -185,9 +190,20 @@ def join_grouped_df(
     group_df = group_df.groupby(group_attr).sum()
     return main_df.set_index(group_attr).join(group_df)
 
+
 def age_bins(
     age_list,
     max_val: int = 90,
     span_size: int = 5
 ):
-    return [ "age_" + str(i) + "-" + str(min(i + span_size - 1, max_val)) for i in range(0, max_val+1, span_size)]
+    return ["age_" + str(i) + "-" + str(min(i + span_size - 1, max_val)) for i in range(0, max_val+1, span_size)]
+
+
+class CustomTransformer(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        # Perform arbitary transformation
+        X["random_int"] = 2.3
+        return X
