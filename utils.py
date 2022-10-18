@@ -230,22 +230,38 @@ def merge_columns_mean(
     series = df.sum(axis=1) / total
     return pd.DataFrame({new_column:series.values}, index=series.index)
 
-# def merge_age_columns_median(
-#     df: pd.DataFrame,
-#     weights : list[int] = None,
-# ) -> pd.Series:
-#     """ Combines columns in a dataframe by averaging their values
-#     Args:
-#         df (pd.DataFrame): The dataframe 
-#         columns (list[str]): The columns to be merged 
+def merge_age_columns_sum(
+    df: pd.DataFrame,
+    level: str,
+) -> pd.Series:
+    """ Combines columns in a dataframe by averaging their values
+    Args:
+        df (pd.DataFrame): The dataframe 
+        columns (list[str]): The columns to be merged 
 
-#     Returns:
-#         pd.Series: Series containing the result
-#     """
-#     ages = list(range(91))
-#     columns = [f'age_{i}' for i in range(91)]
-#     df = df[columns]
-#     return (pd.np.ndenumerate(df.to_numpy()))
+    Returns:
+        pd.Series: Series containing the result
+    """
+    return merge_columns_sum(df.groupby(level).sum(), [f'age_{i}' for i in range(91)], f'{level}.tot_pop', level)
+
+def merge_columns_sum(
+    df: pd.DataFrame,
+    columns: list[str],
+    new_column: str,
+    new_index: str,
+) -> pd.Series:
+    """ Combines columns in a dataframe by averaging their values
+    Args:
+        df (pd.DataFrame): The dataframe 
+        columns (list[str]): The columns to be merged 
+
+    Returns:
+        pd.Series: Series containing the result
+    """
+    # df = df.set_index(key)
+    df = df[columns]
+    series = df.sum(axis=1) 
+    return pd.DataFrame({new_column:series.values}, index=series.index)
 
 
 def age_bins(
