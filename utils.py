@@ -244,11 +244,26 @@ def merge_age_columns_sum(
     """
     return merge_columns_sum(df.groupby(level).sum(), [f'age_{i}' for i in range(91)], f'{level}.tot_pop', level)
 
+num_persons_cols = ['couple_children_0_to_5_years', 'couple_children_18_or_above', 'couple_children_6_to_17_years', 'couple_without_children', 'single_parent_children_0_to_5_years', 'single_parent_children_18_or_above', 'single_parent_children_6_to_17_years', 'singles']
+def merge_households_sum(
+    df: pd.DataFrame,
+    level: str,
+) -> pd.Series:
+    """ Combines columns in a dataframe by averaging their values
+    Args:
+        df (pd.DataFrame): The dataframe 
+        columns (list[str]): The columns to be merged 
+
+    Returns:
+        pd.Series: Series containing the result
+    """
+    return merge_columns_sum(df.groupby(level).sum(), num_persons_cols, f'{level}.tot_household', level)
+
 def merge_columns_sum(
     df: pd.DataFrame,
     columns: list[str],
     new_column: str,
-    new_index: str,
+    new_index: str = '',
 ) -> pd.Series:
     """ Combines columns in a dataframe by averaging their values
     Args:
