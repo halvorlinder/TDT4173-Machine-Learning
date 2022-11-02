@@ -26,3 +26,4 @@ def find_closest_bus_stop(df, n_closest, _sum = False):
     col_name += str(n_closest)
     col_name += "_closest_bus_stop"
     df[col_name] = [closest_point(x["point"], list(bus_routes["point"]), n_closest=n_closest, _sum=_sum) for _, x in df.iterrows()]
+    return df
