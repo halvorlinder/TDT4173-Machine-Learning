@@ -1,1 +1,2 @@
 levels = ['grunnkrets_id', 'delomrade', 'kommune', 'fylke']
+income_cols = ['all_households', 'singles', 'couple_without_children',	'couple_with_children', 'other_households',	'single_parent_with_children']
