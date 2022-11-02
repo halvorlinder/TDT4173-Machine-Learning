@@ -262,6 +262,21 @@ def merge_age_columns_sum(
     """
     return merge_columns_sum(df.groupby(level).sum(), [f'age_{i}' for i in range(91)], f'{level}.tot_pop', level)
 
+def merge_age_columns_list(
+    df: pd.DataFrame,
+    ranges : list[int],
+) -> pd.DataFrame:
+    result_df = df.copy().drop([f'age_{a}' for a in range(91)], axis=1)
+    for r in ranges:
+        cols = [f'age_{a}' for a in range(r[0], r[1])]
+        temp_df = df[cols]
+        series = temp_df.sum(axis=1)
+        result_df[f'c_age_{r[0]}-{r[1]-1}'] = series
+    return result_df
+
+    
+    
+
 num_persons_cols = ['couple_children_0_to_5_years', 'couple_children_18_or_above', 'couple_children_6_to_17_years', 'couple_without_children', 'single_parent_children_0_to_5_years', 'single_parent_children_18_or_above', 'single_parent_children_6_to_17_years', 'singles']
 def merge_households_sum(
     df: pd.DataFrame,
