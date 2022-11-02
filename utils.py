@@ -192,6 +192,24 @@ def join_grouped_df(
     group_df = group_df.add_prefix(f'{group_attr}.')
     return main_df.merge(group_df, how='left', right_index=True, left_on=group_attr)
 
+def join_grouped_df_avg(
+    main_df: pd.DataFrame,
+    group_df: pd.DataFrame,
+    group_attr: str,
+) -> pd.DataFrame:
+    """ Takes a two dataframes, the second is grouped by group_attr and joined into the first on group_attr
+    Args:
+        main_df (pd.DataFrame): The dataframe to be joined into
+        group_df (pd.DataFrame): The dataframe to be grouped
+        group_attr (str): The name of the column to be grouped and joined on 
+
+    Returns:
+        pd.DataFrame: The modified dataframe
+    """
+    group_df = group_df.groupby(group_attr).mean()
+    group_df = group_df.add_prefix(f'{group_attr}.')
+    return main_df.merge(group_df, how='left', right_index=True, left_on=group_attr)
+
 def merge_age_columns_mean(
     df: pd.DataFrame,
     level: str,
