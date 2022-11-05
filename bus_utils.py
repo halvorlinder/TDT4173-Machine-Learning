@@ -13,6 +13,7 @@ def closest_point(point, points):
     return dist_points
 
 def find_closest_bus_stop(df, n_closest: list[int], _sum = True, _mean = True):
+    df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
     bus_routes = pd.read_csv("data/busstops_norway.csv")
     bus_routes["point"] = bus_routes.geometry.apply(lambda x: np.array(x[6:-1].split(" ")).astype(float)[::-1])
     col_name = ""
