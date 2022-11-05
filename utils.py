@@ -382,6 +382,10 @@ def feature_engineer_df(
     df = create_geographical_columns(df)
     return df
 
+def concat_df_keep_unq_index(main_df: pd.DataFrame, extra_df: pd.DataFrame):
+    extra_df.index += main_df.index.max()
+    return pd.concat([main_df, extra_df])
+
 
 class CustomTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
