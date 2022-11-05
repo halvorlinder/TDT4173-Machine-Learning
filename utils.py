@@ -326,6 +326,63 @@ def closest_point(point, points):
         return None
     return points[cdist([point], points).argmin()]
 
+def generate_rev_dict(df, plaace_cat_granularity: int = 4):
+    rev_dict = {}
+    mean_revenue = df.revenue.mean()
+    for val in df["plaace_cat_" + str(plaace_cat_granularity)]:
+        rev_dict[val] = df["revenue"].where(df["plaace_cat_" + str(plaace_cat_granularity)] == val).mean()
+    return rev_dict, mean_revenue
+
+def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
+    if(plaace_cat in rev_dict.keys()):
+        return rev_dict[plaace_cat]
+    return mean_revenue
+
+def feature_engineer_df(
+    df: pd.DataFrame, 
+    chain_count: dict, 
+    rev_dict: dict, 
+    training: bool = True, 
+    training_df: pd.DataFrame = None, 
+    lower_limit: int = 10, 
+    plaace_cat_granularity: int = 4
+):
+    df["is_mall"] = ~df["mall_name"].isna()
+    df["is_chain"] = ~df["chain_name"].isna()
+    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x in chain_count and chain_count[x] < lower_limit) else x)
+    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: x[:1])
+    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: x[:3])
+    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: x[:5])
+    df["plaace_cat_4"] = df["plaace_hierarchy_id"]
+    df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
+    training_df["point"] = [(x, y) for x,y in zip(training_df['lat'], training_df['lon'])]
+    if training:
+        df['closest_' + str(plaace_cat_granularity)] = [
+            closest_point(
+                x["point"], 
+                list(training_df.loc[
+                    training_df["plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
+                    ]['point'].drop([i], axis=0))) for i, x in df.iterrows()
+            ]
+    else:
+        df['closest_' + str(plaace_cat_granularity)] = [
+            closest_point(
+                x["point"], 
+                list(training_df.loc[
+                    training_df["plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
+                    ]['point'])) for i, x in df.iterrows()
+            ]
+    df["mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, rev_dict, mean_revenue))
+    for i, row in df.iterrows():
+        if(row["closest_" + str(plaace_cat_granularity)] == None):
+            val = np.nan
+        else:
+            val = cdist(np.array(row["point"]).reshape(1, -1), np.array(row["closest_" + str(plaace_cat_granularity)]).reshape(1, -1))
+        df.at[i,'dist_to_nearest_comp'] = val
+    df = create_geographical_columns(df)
+    return df
+
+
 class CustomTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
