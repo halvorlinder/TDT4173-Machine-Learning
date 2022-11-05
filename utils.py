@@ -338,10 +338,18 @@ def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
         return rev_dict[plaace_cat]
     return mean_revenue
 
+def split_plaace_cat(df):
+    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: x[:1])
+    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: x[:3])
+    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: x[:5])
+    df["plaace_cat_4"] = df["plaace_hierarchy_id"]
+    return df
+
 def feature_engineer_df(
     df: pd.DataFrame, 
     chain_count: dict, 
     rev_dict: dict, 
+    mean_revenue: float, 
     training: bool = True, 
     training_df: pd.DataFrame = None, 
     lower_limit: int = 10, 
@@ -350,10 +358,6 @@ def feature_engineer_df(
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
     df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x in chain_count and chain_count[x] < lower_limit) else x)
-    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: x[:1])
-    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: x[:3])
-    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: x[:5])
-    df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
     training_df["point"] = [(x, y) for x,y in zip(training_df['lat'], training_df['lon'])]
     if training:
