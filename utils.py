@@ -319,13 +319,6 @@ def age_bins(
 
 from scipy.spatial.distance import cdist
 
-
-def closest_point(point, points):
-    """ Find closest point from a list of points. """
-    if(len(points) == 0):
-        return None
-    return points[cdist([point], points).argmin()]
-
 def generate_rev_dict(df, plaace_cat_granularity: int = 4):
     rev_dict = {}
     mean_revenue = df.revenue.mean()
@@ -345,19 +338,30 @@ def split_plaace_cat(df):
     df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     return df
 
-def feature_engineer_df(
-    df: pd.DataFrame, 
-    chain_count: dict, 
-    rev_dict: dict, 
-    mean_revenue: float, 
-    training: bool = True, 
-    training_df: pd.DataFrame = None, 
-    lower_limit: int = 10, 
-    plaace_cat_granularity: int = 4
-):
+def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[int], lower_limit: int = 10):
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
     df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x in chain_count and chain_count[x] < lower_limit) else x)
+    return df
+
+def mean_rev_of_competitor(df: pd.DataFrame, plaace_cat_granularity: int, rev_dict: dict[float], mean_revenue: float):
+    df["mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, rev_dict, mean_revenue))
+    return df
+
+
+def closest_point(point, points):
+    """ Find closest point from a list of points. """
+    if(len(points) == 0):
+        return None
+    return points[cdist([point], points).argmin()]
+
+
+def find_dist_to_nearest_comp(
+    df: pd.DataFrame, 
+    plaace_cat_granularity: int, 
+    training: bool = True, 
+    training_df: pd.DataFrame = None
+):
     df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
     training_df["point"] = [(x, y) for x,y in zip(training_df['lat'], training_df['lon'])]
     if training:
@@ -376,14 +380,12 @@ def feature_engineer_df(
                     training_df["plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
                     ]['point'])) for i, x in df.iterrows()
             ]
-    df["mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, rev_dict, mean_revenue))
     for i, row in df.iterrows():
         if(row["closest_" + str(plaace_cat_granularity)] == None):
             val = np.nan
         else:
             val = cdist(np.array(row["point"]).reshape(1, -1), np.array(row["closest_" + str(plaace_cat_granularity)]).reshape(1, -1))
-        df.at[i,'dist_to_nearest_comp'] = val
-    df = create_geographical_columns(df)
+        df.at[i,'dist_to_nearest_comp_' + str(plaace_cat_granularity)] = val
     return df
 
 def concat_df_keep_unq_index(main_df: pd.DataFrame, extra_df: pd.DataFrame):
