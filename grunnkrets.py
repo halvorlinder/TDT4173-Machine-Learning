@@ -4,8 +4,8 @@ import numpy as np
 from constants import *
 
 
-def make_grunnkrets_df(stores_train: pd.DataFrame) -> pd.DataFrame:
-    full_population_df = create_geographical_columns(stores_train)
+def make_grunnkrets_df(stores_df: pd.DataFrame) -> pd.DataFrame:
+    full_population_df = create_geographical_columns(stores_df)
 
     # Age
 
@@ -103,3 +103,5 @@ def make_grunnkrets_df(stores_train: pd.DataFrame) -> pd.DataFrame:
     for level in levels:
         full_population_df[f'{level}.pop_density'] = full_population_df[f'{level}.tot_pop']/full_population_df[f'{level}.area_km2']
         full_population_df[f'{level}.pop_density_log'] = np.log1p(full_population_df[f'{level}.pop_density'])
+    
+    return full_population_df
