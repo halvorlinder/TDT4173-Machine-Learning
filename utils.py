@@ -342,6 +342,7 @@ def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[int], lowe
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
     df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x in chain_count and chain_count[x] < lower_limit) else x)
+    df["is_grocery"] = df.sales_channel_name.apply(lambda x: x == "Grocery stores")
     return df
 
 def mean_rev_of_competitor(df: pd.DataFrame, plaace_cat_granularity: int, rev_dict: dict[float], mean_revenue: float):
