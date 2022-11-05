@@ -120,9 +120,6 @@ def create_delomrade_column(dataframe: pd.DataFrame, grunnkrets_column_name: str
     return dataframe
 
 
-stores_train = pd.read_csv("data/stores_train.csv")
-
-
 def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 3 new columns. A column for "fylke",
     a column for "kommune" and a column for "delomrade".
@@ -319,6 +316,15 @@ def age_bins(
 ):
     return ["age_" + str(i) + "-" + str(min(i + span_size - 1, max_val)) for i in range(0, max_val+1, span_size)]
 
+
+from scipy.spatial.distance import cdist
+
+
+def closest_point(point, points):
+    """ Find closest point from a list of points. """
+    if(len(points) == 0):
+        return None
+    return points[cdist([point], points).argmin()]
 
 class CustomTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
