@@ -1,5 +1,6 @@
 data/
 temp_data/
+catboost_info/
 sample_submission.csv
 introduction.ipynb
 submission.csv
