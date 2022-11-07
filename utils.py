@@ -357,37 +357,71 @@ def closest_point(point, points):
     return points[cdist([point], points).argmin()]
 
 
+def closest_point(point, points):
+    """ Find closest point from a list of points. """
+    if(len(points) == 0):
+        return []
+    dist_points = cdist([point], points)
+    dist_points = dist_points.flatten()
+    dist_points.sort()
+    return dist_points
+
 def find_dist_to_nearest_comp(
     df: pd.DataFrame, 
-    plaace_cat_granularity: int, 
-    training: bool = True, 
-    training_df: pd.DataFrame = None
-):
+    plaace_cat_granularities: list[int], 
+    n_closest: list[int], 
+    training: bool, 
+    training_df: pd.DataFrame, 
+    _sum: bool = True, 
+    _mean: bool = True,
+) -> pd.DataFrame:
+    """Find distance to nearest n competitors
+
+    Args:
+        df (pd.DataFrame): original df to add information too.
+        plaace_cat_granularities (list[int]): list of which plaace_cat-levels to find competitors at.
+        n_closest (list[int]): list of ints, for finding n closest competitors.
+        training (bool): set to True if df is a subset of training_df, removes closest shop (which is itself)
+        training_df (pd.DataFrame): the df containing all the stores we map against.
+        _sum (bool, optional): whether or not we should add columns summing the values of n_closest. Defaults to True.
+        _mean (bool, optional): whether or not we should add columns finding 
+        mean of the values of n_closest. Defaults to True.
+
+    Returns:
+        pd.Dataframe: the modified dataframe.
+    """
     df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
     training_df["point"] = [(x, y) for x,y in zip(training_df['lat'], training_df['lon'])]
-    if training:
-        df['closest_' + str(plaace_cat_granularity)] = [
+    for plaace_cat_granularity in plaace_cat_granularities:
+        closest_points = [
             closest_point(
                 x["point"], 
                 list(training_df.loc[
-                    training_df["plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
-                    ]['point'].drop([i], axis=0))) for i, x in df.iterrows()
-            ]
-    else:
-        df['closest_' + str(plaace_cat_granularity)] = [
-            closest_point(
-                x["point"], 
-                list(training_df.loc[
-                    training_df["plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
-                    ]['point'])) for i, x in df.iterrows()
-            ]
-    for i, row in df.iterrows():
-        if(row["closest_" + str(plaace_cat_granularity)] == None):
-            val = np.nan
-        else:
-            val = cdist(np.array(row["point"]).reshape(1, -1), np.array(row["closest_" + str(plaace_cat_granularity)]).reshape(1, -1))
-        df.at[i,'dist_to_nearest_comp_' + str(plaace_cat_granularity)] = val
-    return df
+                    training_df[
+                        "plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
+                    ]['point'])) for _, x in df.iterrows()
+                ]
+        if _sum:
+            for n in n_closest:
+                col_val = []
+                for i in range(len(closest_points)):
+                    if(len(closest_points[i]) < (n + training)):
+                        val = np.nan
+                    else:
+                        val = np.sum(closest_points[i][training:(n + training)])
+                    col_val.append(val)
+                df[f'sum_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = col_val
+        if _mean:
+            for n in n_closest:
+                col_val = []
+                for i in range(len(closest_points)):
+                    if(len(closest_points[i]) < (n + training)):
+                        val = np.nan
+                    else:
+                        val = np.mean(closest_points[i][training:(n + training)])
+                    col_val.append(val)
+                df[f'mean_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = val
+    return df, closest_points
 
 def concat_df_keep_unq_index(main_df: pd.DataFrame, extra_df: pd.DataFrame):
     extra_df.index += main_df.index.max()
