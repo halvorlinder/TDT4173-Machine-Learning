@@ -418,10 +418,10 @@ def find_dist_to_nearest_comp(
                     if(len(closest_points[i]) < (n + training)):
                         val = np.nan
                     else:
-                        val = np.mean(closest_points[i][training:(n + training)])
+                        val = np.sum(closest_points[i][training:(n + training)])
                     col_val.append(val)
-                df[f'mean_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = val
-    return df, closest_points
+                df[f'mean_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = col_val
+    return df
 
 def concat_df_keep_unq_index(main_df: pd.DataFrame, extra_df: pd.DataFrame):
     extra_df.index += main_df.index.max()
