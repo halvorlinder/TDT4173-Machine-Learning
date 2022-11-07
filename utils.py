@@ -338,10 +338,10 @@ def split_plaace_cat(df):
     df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     return df
 
-def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[int], lower_limit: int = 10):
+def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str], lower_limit: int = 10):
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
-    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x in chain_count and chain_count[x] < lower_limit) else x)
+    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x not in chain_count or chain_count[x] < lower_limit) else x)
     df["is_grocery"] = df.sales_channel_name.apply(lambda x: x == "Grocery stores")
     return df
 
