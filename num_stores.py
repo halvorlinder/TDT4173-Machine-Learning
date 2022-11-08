@@ -29,15 +29,15 @@ def add_num_stores_info(df: pd.DataFrame) -> pd.DataFrame:
     
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_capita'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.tot_pop']
+            results_df[f'{level}.{cat}_per_capita'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.tot_pop']
 
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_km2'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.area_km2']
+            results_df[f'{level}.{cat}_per_km2'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.area_km2']
 
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_tot_income'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.total_income']
+            results_df[f'{level}.{cat}_per_tot_income'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.total_income']
 
     results_df.to_csv(path_or_buf=f"temp_data/num_stores.csv", index=True)
 
