@@ -433,7 +433,7 @@ def find_dist_to_nearest_comp(
                     if(len(closest_points[i]) < (n + training)):
                         val = np.nan
                     else:
-                        val = np.sum(closest_points[i][training:(n + training)])
+                        val = np.mean(closest_points[i][training:(n + training)])
                     col_val.append(val)
                 df[f'mean_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = col_val
     return df
