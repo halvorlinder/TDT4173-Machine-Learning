@@ -319,6 +319,20 @@ def age_bins(
 
 from scipy.spatial.distance import cdist
 
+def generate_chain_rev_dict(df: pd.DataFrame):
+    bounded_chain_names = df.bounded_chain_name.unique()
+    bounded_chain_revs = {}
+
+    for bounded_chain_name in bounded_chain_names:
+        bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].revenue)
+
+    return bounded_chain_revs
+
+def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int]):
+    df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs[x])
+    return df
+
+
 def generate_rev_dict(df, plaace_cat_granularity: int = 4):
     rev_dict = {}
     mean_revenue = df.revenue.mean()
@@ -338,7 +352,7 @@ def split_plaace_cat(df):
     df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     return df
 
-def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str], lower_limit: int = 10):
+def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str: int], lower_limit: int = 10):
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
     df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x not in chain_count or chain_count[x] < lower_limit) else x)
