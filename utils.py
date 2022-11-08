@@ -330,6 +330,7 @@ def generate_chain_rev_dict(df: pd.DataFrame):
 
 def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int]):
     df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs[x])
+    df["log_chain_mean_revenue"] = df.chain_mean_revenue.apply(lambda x: np.log1p(x))
     return df
 
 
