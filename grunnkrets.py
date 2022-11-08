@@ -103,3 +103,22 @@ def make_grunnkrets_df(stores_train: pd.DataFrame) -> pd.DataFrame:
     for level in levels:
         full_population_df[f'{level}.pop_density'] = full_population_df[f'{level}.tot_pop']/full_population_df[f'{level}.area_km2']
         full_population_df[f'{level}.pop_density_log'] = np.log1p(full_population_df[f'{level}.pop_density'])
+
+    def impute_geography(row: pd.Series):
+        def impute_geography_internal(new_row: pd.Series, i: int):
+            for col in row.index:
+                if column.startswith(levels[::-1][i+1]):
+                    new_row[col] = new_row[col.replace(levels[::-1][i+1], levels[::-1][i])]
+        new_row = row.copy()
+        for i, level in enumerate(levels[::-1][1:]):
+            has_nans = False
+            for column in row.index:
+                if column.startswith(level) and np.isnan(new_row[column]):
+                    has_nans = True
+                    break
+            if has_nans:
+                impute_geography_internal(new_row, i)
+        return new_row
+
+    full_population_df = full_population_df.apply(impute_geography, axis = 1)
+    return full_population_df
