@@ -22,7 +22,6 @@ def add_num_stores_info(df: pd.DataFrame) -> pd.DataFrame:
 
     for level in levels:
         for cat in plaace_cols:
-            print(level,  cat)
             csv_name = f"temp_data/store_nums_{level}_{cat}.csv" 
             store_counts_df = pd.read_csv(csv_name, dtype={cat: object})
             results_df = pd.merge(results_df, store_counts_df, how='left', on=[level, cat])
@@ -30,17 +29,19 @@ def add_num_stores_info(df: pd.DataFrame) -> pd.DataFrame:
     
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_capita'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.tot_pop']
+            results_df[f'{level}.{cat}_per_capita'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.tot_pop']
 
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_km2'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.area_km2']
+            results_df[f'{level}.{cat}_per_km2'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.area_km2']
 
     for level in levels:
         for cat in plaace_cols:
-            results_df[f'{level}.{cat}_per_tot_income'] = results_df[f'{level}.{cat}_count'] / results_df[f'{level}.total_income']
+            results_df[f'{level}.{cat}_per_tot_income'] = results_df[f'{level}.{cat}_count'] / df[f'{level}.total_income']
 
     results_df.to_csv(path_or_buf=f"temp_data/num_stores.csv", index=True)
 
-    return pd.merge(df, results_df, on='store_id', how='left')
+    return_df = pd.merge(df, results_df, on='store_id', how='left', suffixes=('', '_redundant'))
+    return_df.drop(return_df.filter(regex='_redundant$').columns, axis=1, inplace=True)
+    return return_df
     
