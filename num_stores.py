@@ -22,12 +22,13 @@ def add_num_stores_info(df: pd.DataFrame) -> pd.DataFrame:
 
     for level in levels:
         for cat in plaace_cols:
-            print(level,  cat)
             csv_name = f"temp_data/store_nums_{level}_{cat}.csv" 
             store_counts_df = pd.read_csv(csv_name, dtype={cat: object})
             results_df = pd.merge(results_df, store_counts_df, how='left', on=[level, cat])
 
     results_df.to_csv(path_or_buf=f"temp_data/num_stores.csv", index=True)
 
-    return pd.merge(df, results_df, on='store_id', how='left')
+    return_df = pd.merge(df, results_df, on='store_id', how='left', suffixes=('', '_redundant'))
+    return_df.drop(return_df.filter(regex='_redundant$').columns, axis=1, inplace=True)
+    return return_df
     
