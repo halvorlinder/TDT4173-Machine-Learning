@@ -120,9 +120,6 @@ def create_delomrade_column(dataframe: pd.DataFrame, grunnkrets_column_name: str
     return dataframe
 
 
-stores_train = pd.read_csv("data/stores_train.csv")
-
-
 def create_geographical_columns(dataframe: pd.DataFrame, grunnkrets_column_name: str = "grunnkrets_id") -> pd.DataFrame:
     """Decodes the grunnkrets_id column into 3 new columns. A column for "fylke",
     a column for "kommune" and a column for "delomrade".
@@ -318,6 +315,131 @@ def age_bins(
     span_size: int = 5
 ):
     return ["age_" + str(i) + "-" + str(min(i + span_size - 1, max_val)) for i in range(0, max_val+1, span_size)]
+
+
+from scipy.spatial.distance import cdist
+
+def generate_chain_rev_dict(df: pd.DataFrame):
+    bounded_chain_names = df.bounded_chain_name.unique()
+    bounded_chain_revs = {}
+
+    for bounded_chain_name in bounded_chain_names:
+        bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].revenue)
+
+    return bounded_chain_revs
+
+def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int]):
+    df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs[x])
+    return df
+
+
+def generate_rev_dict(df, plaace_cat_granularity: int = 4):
+    rev_dict = {}
+    mean_revenue = df.revenue.mean()
+    for val in df["plaace_cat_" + str(plaace_cat_granularity)]:
+        rev_dict[val] = df["revenue"].where(df["plaace_cat_" + str(plaace_cat_granularity)] == val).mean()
+    return rev_dict, mean_revenue
+
+def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
+    if(plaace_cat in rev_dict.keys()):
+        return rev_dict[plaace_cat]
+    return mean_revenue
+
+def split_plaace_cat(df):
+    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: x[:1])
+    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: x[:3])
+    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: x[:5])
+    df["plaace_cat_4"] = df["plaace_hierarchy_id"]
+    return df
+
+def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str: int], lower_limit: int = 10):
+    df["is_mall"] = ~df["mall_name"].isna()
+    df["is_chain"] = ~df["chain_name"].isna()
+    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x not in chain_count or chain_count[x] < lower_limit) else x)
+    df["is_grocery"] = df.sales_channel_name.apply(lambda x: x == "Grocery stores")
+    return df
+
+def mean_rev_of_competitor(df: pd.DataFrame, plaace_cat_granularity: int, rev_dict: dict[float], mean_revenue: float):
+    df["mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, rev_dict, mean_revenue))
+    return df
+
+
+def closest_point(point, points):
+    """ Find closest point from a list of points. """
+    if(len(points) == 0):
+        return None
+    return points[cdist([point], points).argmin()]
+
+
+def closest_point(point, points):
+    """ Find closest point from a list of points. """
+    if(len(points) == 0):
+        return []
+    dist_points = cdist([point], points)
+    dist_points = dist_points.flatten()
+    dist_points.sort()
+    return dist_points
+
+def find_dist_to_nearest_comp(
+    df: pd.DataFrame, 
+    plaace_cat_granularities: list[int], 
+    n_closest: list[int], 
+    training: bool, 
+    training_df: pd.DataFrame, 
+    _sum: bool = True, 
+    _mean: bool = True,
+) -> pd.DataFrame:
+    """Find distance to nearest n competitors
+
+    Args:
+        df (pd.DataFrame): original df to add information too.
+        plaace_cat_granularities (list[int]): list of which plaace_cat-levels to find competitors at.
+        n_closest (list[int]): list of ints, for finding n closest competitors.
+        training (bool): set to True if df is a subset of training_df, removes closest shop (which is itself)
+        training_df (pd.DataFrame): the df containing all the stores we map against.
+        _sum (bool, optional): whether or not we should add columns summing the values of n_closest. Defaults to True.
+        _mean (bool, optional): whether or not we should add columns finding 
+        mean of the values of n_closest. Defaults to True.
+
+    Returns:
+        pd.Dataframe: the modified dataframe.
+    """
+    df["point"] = [(x, y) for x,y in zip(df['lat'], df['lon'])]
+    training_df["point"] = [(x, y) for x,y in zip(training_df['lat'], training_df['lon'])]
+    for plaace_cat_granularity in plaace_cat_granularities:
+        closest_points = [
+            closest_point(
+                x["point"], 
+                list(training_df.loc[
+                    training_df[
+                        "plaace_cat_" + str(plaace_cat_granularity)] == x["plaace_cat_" + str(plaace_cat_granularity)]
+                    ]['point'])) for _, x in df.iterrows()
+                ]
+        if _sum:
+            for n in n_closest:
+                col_val = []
+                for i in range(len(closest_points)):
+                    if(len(closest_points[i]) < (n + training)):
+                        val = np.nan
+                    else:
+                        val = np.sum(closest_points[i][training:(n + training)])
+                    col_val.append(val)
+                df[f'sum_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = col_val
+        if _mean:
+            for n in n_closest:
+                col_val = []
+                for i in range(len(closest_points)):
+                    if(len(closest_points[i]) < (n + training)):
+                        val = np.nan
+                    else:
+                        val = np.sum(closest_points[i][training:(n + training)])
+                    col_val.append(val)
+                df[f'mean_dist_to_nearest_{n}_comp_plaace_{str(plaace_cat_granularity)}'] = col_val
+    return df
+
+def concat_df_keep_unq_index(main_df: pd.DataFrame, extra_df: pd.DataFrame):
+    extra_df.index += main_df.index.max()
+    return pd.concat([main_df, extra_df])
 
 
 class CustomTransformer(BaseEstimator, TransformerMixin):

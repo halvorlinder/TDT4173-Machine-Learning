@@ -4,8 +4,8 @@ import numpy as np
 from constants import *
 
 
-def make_grunnkrets_df(stores_train: pd.DataFrame) -> pd.DataFrame:
-    full_population_df = create_geographical_columns(stores_train)
+def make_grunnkrets_df(stores_df: pd.DataFrame) -> pd.DataFrame:
+    full_population_df = create_geographical_columns(stores_df)
 
     # Age
 
@@ -121,4 +121,5 @@ def make_grunnkrets_df(stores_train: pd.DataFrame) -> pd.DataFrame:
         return new_row
 
     full_population_df = full_population_df.apply(impute_geography, axis = 1)
+    
     return full_population_df
