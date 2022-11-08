@@ -329,7 +329,7 @@ def generate_chain_rev_dict(df: pd.DataFrame):
     return bounded_chain_revs
 
 def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int]):
-    df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs[x])
+    df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs["OTHER"] if(x not in bounded_chain_revs) else bounded_chain_revs[x])
     df["log_chain_mean_revenue"] = df.chain_mean_revenue.apply(lambda x: np.log1p(x))
     return df
 
@@ -356,7 +356,7 @@ def split_plaace_cat(df):
 def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str: int], lower_limit: int = 10):
     df["is_mall"] = ~df["mall_name"].isna()
     df["is_chain"] = ~df["chain_name"].isna()
-    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x not in chain_count or chain_count[x] < lower_limit) else x)
+    df["bounded_chain_name"] = df["chain_name"].apply(lambda x: "OTHER" if(x not in chain_count.keys() or chain_count[x] < lower_limit) else x)
     df["is_grocery"] = df.sales_channel_name.apply(lambda x: x == "Grocery stores")
     return df
 
