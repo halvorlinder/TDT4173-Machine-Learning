@@ -1,3 +1,4 @@
+from typing import List
 import pandas as pd
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -335,6 +336,13 @@ def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: in
     df["log_chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: log_bounded_chain_revs["OTHER"] if(x not in log_bounded_chain_revs) else log_bounded_chain_revs[x])
     return df
 
+def generate_std_dict(df: pd.DataFrame, plaace_cat_granularity: int = 4):
+    stf_dict = {}
+    std_rev = df.revenue.std()
+    for val in df["plaace_cat_" + str(plaace_cat_granularity)]:
+        stf_dict[val] = df["revenue"].where(df["plaace_cat_" + str(plaace_cat_granularity)] == val).std()
+    return stf_dict, std_rev
+    
 
 def generate_rev_dict(df, plaace_cat_granularity: int = 4):
     rev_dict = {}
