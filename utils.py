@@ -334,7 +334,7 @@ def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: in
     df["log_chain_mean_revenue"] = df.chain_mean_revenue.apply(lambda x: np.log1p(x))
     return df
 
-def generate_std_col(df: pd.DataFrame, plaace_cat_granularity: int = 4):
+def generate_std_dict(df: pd.DataFrame, plaace_cat_granularity: int = 4):
     stf_dict = {}
     std_rev = df.revenue.std()
     for val in df["plaace_cat_" + str(plaace_cat_granularity)]:
