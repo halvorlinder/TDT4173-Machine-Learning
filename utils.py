@@ -322,15 +322,17 @@ from scipy.spatial.distance import cdist
 def generate_chain_rev_dict(df: pd.DataFrame):
     bounded_chain_names = df.bounded_chain_name.unique()
     bounded_chain_revs = {}
+    log_bounded_chain_revs = {}
 
     for bounded_chain_name in bounded_chain_names:
         bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].revenue)
+        log_bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].log_revenue)
 
-    return bounded_chain_revs
+    return bounded_chain_revs, log_bounded_chain_revs
 
-def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int]):
+def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int], log_bounded_chain_revs: dict[str: int]):
     df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs["OTHER"] if(x not in bounded_chain_revs) else bounded_chain_revs[x])
-    df["log_chain_mean_revenue"] = df.chain_mean_revenue.apply(lambda x: np.log1p(x))
+    df["log_chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: log_bounded_chain_revs["OTHER"] if(x not in log_bounded_chain_revs) else log_bounded_chain_revs[x])
     return df
 
 
@@ -347,9 +349,9 @@ def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
     return mean_revenue
 
 def split_plaace_cat(df):
-    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: x[:1])
-    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: x[:3])
-    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: x[:5])
+    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:1]))
+    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:3]))
+    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:5]))
     df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     return df
 
