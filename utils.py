@@ -357,9 +357,9 @@ def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
     return mean_revenue
 
 def split_plaace_cat(df):
-    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:1]))
-    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:3]))
-    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: str(x[:5]))
+    df["plaace_cat_1"] = df["plaace_hierarchy_id"].apply(lambda x: str(x.split('.')[0]))
+    df["plaace_cat_2"] = df["plaace_hierarchy_id"].apply(lambda x: str('.'.join(x.split('.')[:2])))
+    df["plaace_cat_3"] = df["plaace_hierarchy_id"].apply(lambda x: str('.'.join(x.split('.')[:3])))
     df["plaace_cat_4"] = df["plaace_hierarchy_id"]
     return df
 
