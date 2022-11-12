@@ -320,20 +320,28 @@ def age_bins(
 
 from scipy.spatial.distance import cdist
 
-def generate_chain_rev_dict(df: pd.DataFrame):
+def generate_chain_rev_dict(df: pd.DataFrame, quantile: float = 0.05):
     bounded_chain_names = df.bounded_chain_name.unique()
     bounded_chain_revs = {}
     log_bounded_chain_revs = {}
 
     for bounded_chain_name in bounded_chain_names:
-        bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].revenue)
-        log_bounded_chain_revs[bounded_chain_name] = np.mean(df[df.bounded_chain_name == bounded_chain_name].log_revenue)
+        small_df = df[df["bounded_chain_name"] == bounded_chain_name]
+        #if(small_df.shape[0] > 10):
+        #    high_q = small_df["revenue"].quantile(1 - quantile)
+        #    low_q = small_df["revenue"].quantile(quantile)
+        #   bounded_chain_revs[bounded_chain_name] = small_df[(small_df["revenue"] < high_q) & (small_df["revenue"] > low_q)].revenue.mean()
+        #    log_bounded_chain_revs[bounded_chain_name] = small_df[(small_df["revenue"] < high_q) & (small_df["revenue"] > low_q)].log_revenue.mean()
+        #else:
+        bounded_chain_revs[bounded_chain_name] = small_df.revenue.mean()
+        log_bounded_chain_revs[bounded_chain_name] = small_df.log_revenue.mean()
 
     return bounded_chain_revs, log_bounded_chain_revs
 
 def create_mean_chain_rev_col(df: pd.DataFrame, bounded_chain_revs: dict[str: int], log_bounded_chain_revs: dict[str: int]):
     df["chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: bounded_chain_revs["OTHER"] if(x not in bounded_chain_revs) else bounded_chain_revs[x])
     df["log_chain_mean_revenue"] = df.bounded_chain_name.apply(lambda x: log_bounded_chain_revs["OTHER"] if(x not in log_bounded_chain_revs) else log_bounded_chain_revs[x])
+    #df["log_chain_mean_revenue"] = df["chain_mean_revenue"].apply(lambda x: np.log1p(x))
     return df
 
 def generate_std_dict(df: pd.DataFrame, plaace_cat_granularity: int = 4):
@@ -344,12 +352,20 @@ def generate_std_dict(df: pd.DataFrame, plaace_cat_granularity: int = 4):
     return stf_dict, std_rev
     
 
-def generate_rev_dict(df, plaace_cat_granularity: int = 4):
+def generate_plaace_rev_dict(df, plaace_cat_granularity: int = 4, quantile: int = 0.05):
     rev_dict = {}
+    log_rev_dict = {}
     mean_revenue = df.revenue.mean()
-    for val in df["plaace_cat_" + str(plaace_cat_granularity)]:
-        rev_dict[val] = df["revenue"].where(df["plaace_cat_" + str(plaace_cat_granularity)] == val).mean()
-    return rev_dict, mean_revenue
+    log_mean_revenue = df.log_revenue.mean()
+    for val in df["plaace_cat_" + str(plaace_cat_granularity)].unique():
+        small_df = df[df["plaace_cat_" + str(plaace_cat_granularity)] == val]
+        #high_q = small_df["revenue"].quantile(1 - quantile)
+        #low_q = small_df["revenue"].quantile(quantile)
+        #rev_dict[val] = small_df[(small_df["revenue"] < high_q) & (small_df["revenue"] > low_q)].revenue.mean()
+        #log_rev_dict[val] = small_df[(small_df["revenue"] < high_q) & (small_df["revenue"] > low_q)].log_revenue.mean()
+        rev_dict[val] = small_df.revenue.mean()
+        log_rev_dict[val] = small_df.log_revenue.mean()
+    return rev_dict, mean_revenue, log_rev_dict, log_mean_revenue
 
 def mean_func_rev(plaace_cat, rev_dict, mean_revenue):
     if(plaace_cat in rev_dict.keys()):
@@ -372,6 +388,11 @@ def create_chain_and_mall_columns(df: pd.DataFrame, chain_count: dict[str: int],
 
 def mean_rev_of_competitor(df: pd.DataFrame, plaace_cat_granularity: int, rev_dict: dict[float], mean_revenue: float):
     df["mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, rev_dict, mean_revenue))
+    return df
+
+def log_mean_rev_of_competitor(df: pd.DataFrame, plaace_cat_granularity: int, log_rev_dict: dict[float], log_mean_revenue: float):
+    df["log_mean_revenue_" + str(plaace_cat_granularity)] = df["plaace_cat_" + str(plaace_cat_granularity)].apply(lambda x: mean_func_rev(x, log_rev_dict, log_mean_revenue)) 
+    #df["log_mean_revenue_" + str(plaace_cat_granularity)] = np.log1p(df["mean_revenue_" + str(plaace_cat_granularity)])
     return df
 
 
