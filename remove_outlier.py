@@ -1,6 +1,14 @@
 import pandas as pd
 import numpy as np
 
-def remove_outliers(df: pd.DataFrame, percentage: int = 0.05) -> pd.DataFrame:
-    return df[df.groupby("plaace_hierarchy_id").revenue.\
-        transform(lambda x: (x<x.quantile(1-percentage))&(x>(x.quantile(percentage)))).eq(1)]
+def remove_outliers(df: pd.DataFrame, category: str, z_score: int = 3) -> pd.DataFrame:
+    vals = df[category].unique()
+    for val in vals:
+        cat = df[df[category] == val]
+        mean = cat["revenue"].mean()
+        std =cat["revenue"].std()
+        deletus = cat[abs((cat["revenue"] - mean) / std) > z_score]
+        df = df[~df["store_id"].isin(deletus["store_id"])]
+    return df
+
+
