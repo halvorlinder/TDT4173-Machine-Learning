@@ -77,6 +77,10 @@ def make_grunnkrets_df(stores_df: pd.DataFrame) -> pd.DataFrame:
     for level in levels:
         tot_households_grunnkrets = merge_households_sum(new_num_persons_df, level)
         full_population_df=full_population_df.merge(tot_households_grunnkrets, how='left', right_index=True, left_on=level)
+
+    for level in levels:
+        for house in num_persons_cols:
+            full_population_df[f'{level}.{house}_ratio'] = full_population_df[f'{level}.{house}']/full_population_df[f'{level}.tot_household']
     
     ## Income 
 
